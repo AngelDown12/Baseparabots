@@ -3,8 +3,8 @@ import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
 const handler = async (m, { conn, text, participants }) => {
   if (!m.isGroup || m.key.fromMe) return
 
-  const content = m.text || m.msg?.caption || ''
-  if (!/^n(\s|$)/i.test(content.trim())) return
+  const msgText = m.text || m.msg?.caption || ''
+  if (!/^n(\s|$)/i.test(msgText.trim())) return
 
   // Reacción al mensaje
   await conn.sendMessage(m.chat, {
@@ -19,7 +19,7 @@ const handler = async (m, { conn, text, participants }) => {
     const q = m.quoted || m
     const mime = (q.msg || q).mimetype || ''
     const isMedia = /image|video|sticker|audio/.test(mime)
-    const userText = content.trim().slice(1).trim()
+    const userText = msgText.trim().slice(1).trim()
     const originalCaption = q.msg?.caption || q.text || ''
     const finalCaption = userText || originalCaption.trim() || '📢 Notificación'
 
@@ -46,7 +46,7 @@ const handler = async (m, { conn, text, participants }) => {
           await conn.sendMessage(m.chat, { audio: media, mimetype: 'audio/mpeg', fileName: 'audio.mp3', mentions: users, ...options })
           break
         case 'stickerMessage':
-          await conn.sendMessage(m.chat, { sticker: media, mentions: users, ...options }) // ✅ Con menciones
+          await conn.sendMessage(m.chat, { sticker: media, mentions: users, ...options }) // Con menciones en sticker
           break
       }
 
@@ -65,10 +65,11 @@ const handler = async (m, { conn, text, participants }) => {
       await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
 
     } else if (!m.quoted && isMedia) {
-      if (q.mtype === 'imageMessage') {
-        await conn.sendMessage(m.chat, { image: media, caption: finalCaption, mentions: users }, { quoted: m })
-      } else if (q.mtype === 'videoMessage') {
+      // ✅ Aquí se usa m.mtype para detectar correctamente el tipo cuando es mensaje directo (especialmente en videos)
+      if (m.mtype === 'videoMessage') {
         await conn.sendMessage(m.chat, { video: media, caption: finalCaption, mentions: users, mimetype: 'video/mp4' }, { quoted: m })
+      } else if (m.mtype === 'imageMessage') {
+        await conn.sendMessage(m.chat, { image: media, caption: finalCaption, mentions: users }, { quoted: m })
       }
 
     } else {
