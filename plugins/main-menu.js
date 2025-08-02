@@ -7,7 +7,6 @@ let tags = {
   'main': '𝘐𝘯𝘧𝘰 📚',
   'search': '𝘉𝘶𝘴𝘲𝘶𝘦𝘥𝘢𝘴 🔎',
   'game': '𝘑𝘶𝘦𝘨𝘰𝘴 🎮',
-  'serbot': '𝘚𝘶𝘣 𝘉𝘰𝘵𝘴 🤖',
   'rpg': '𝘙𝘗𝘎 🌠',
   'rg': '𝘙𝘦𝘨𝘪𝘴𝘵𝘳𝘰 📁',
   'sticker': '𝘚𝘵𝘪𝘤𝘬𝘦𝘳𝘴 🏞',
@@ -29,23 +28,25 @@ let tags = {
 const defaultMenu = {
   before: `
 *꒷꒦꒷꒷꒦꒷꒦꒷꒷꒦꒷꒦꒷꒦꒷꒷꒦꒷꒷꒦꒷꒷꒦꒷꒦꒷꒦꒷*
+    
 
-“ hello *%name*, Cómo se encuentra el día de hoy? ”
+🔥 𝗧𝗶𝗲𝗺𝗽𝗼 𝗔𝗰𝘁𝗶𝘃𝗼: *169 Horas*
 
-*╭━〔*  *Info User* *〕*
-*┃➤* *👤 Nombre ∙* %name
-*┃➤* *🍬 Dulces ∙* %limit
-*┃➤* *⭐ XP ∙* %totalexp
-*┃➤* *⚡ Nivel ∙* %level
- ╰━━━━━━
+💻 𝗛𝗼𝘀𝘁𝗶𝗻𝗴 𝗔𝗰𝘁𝘂𝗮𝗹: 𝗦𝗸𝘆 𝘂𝗹𝘁𝗿𝗮 
+
+🕷️ 𝗖𝗿𝗲𝗮𝗱𝗼𝗿: +5217227584934
+
+
+
+
  %readmore
 *~•~•~•~•~•~•~•~•~•~•~•~•~•~•~•~•~*
 
-\t\t\t𝑺 𝑶 𝑭 𝑰 - 𝐌 𝐄 𝐍 𝐔́
+\t\t\tA N G E L B O T U W U
 `.trimStart(),
-header: '*╭━〔* *%category* *〕*',
-body: '*┃➤* *%cmd*\n',
-footer: ' ╰━━━━━━\n',
+header: '┣━━━ *〔* *%category* *〕*━━━┫',
+body: '*┃⋗ 🧨* *%cmd*\n',
+footer: '┗━━━━━━━━━━━━━━┛\n',
 after: '',
 }
 
@@ -146,9 +147,13 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
       readmore: readMore
     }
     text = text.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), (_, name) => '' + replace[name])
-    
-    let pp = './storage/img/siskedurl.jpg'
-    await conn.sendFile(m.chat, pp, 'thumbnail.jpg', text.trim(), m, null)
+
+    let pp = 'https://d.uguu.se/StTbSbsx.mp4'
+    await conn.sendMessage(m.chat, {
+  video: { url: 'https://d.uguu.se/StTbSbsx.mp4' },
+  caption: text.trim(),
+  gifPlayback: true
+}, { quoted: m })
 
   } catch (e) {
     conn.reply(m.chat, 'Lo sentimos, el menú tiene un error.', m)
@@ -156,10 +161,11 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
   }
 }
 
-handler.help = ['menu']
-handler.tags = ['main']
-handler.command = ['menu', 'help', 'menú', 'comandos', 'allmenu', 'menucompleto', 'funciones'] 
-export default handler
+handler.customPrefix = /^(menu|menú|ayuda|help)$/i;
+handler.command = new RegExp; // para que funcione sin prefijo
+handler.register = false;
+
+export default handler;
 
 const more = String.fromCharCode(8206)
 const readMore = more.repeat(4001)
