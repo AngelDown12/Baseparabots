@@ -1,43 +1,65 @@
 import { sticker } from '../lib/sticker.js'
 import axios from 'axios'
 
-let handler = async (m, { conn, text }) => {
-   if (!text) return conn.reply(m.chat, '🍭 Escribe un Texto.', m)
-   if (text.length > 30) return conn.reply(m.chat, 'Solo se permiten 30 caracteres como Máximo.', m)
-   try {
-   let pp = await conn.profilePictureUrl(m.sender, 'image').catch(_ => global.imgbot.noprofileurl)
-   const obj = {
-      "type": "quote",
-      "format": "png",
-      "backgroundColor": "#FFFFFF",
-      "width": 512,
-      "height": 768,
-      "scale": 2,
-      "messages": [{
-         "entities": [],
-         "avatar": true,
-         "from": {
-            "id": 1,
-            "name": m.name,
-            "photo": {
-               "url": pp
-            }
-         },
-         "text": text,
-         "replyMessage": {}
-      }]
-   }
-   const json = await axios.post('https://bot.lyo.su/quote/generate', obj, {
-      headers: {
-         'Content-Type': 'application/json'
-      }
-   })
-   const buffer = Buffer.from(json.data.result.image, 'base64')
-   let stick = await sticker(buffer, false, packname, author)
-   await await conn.sendFile(m.chat, stick, 'sticker.webp', '', m)
-} catch {
-}}
-handler.help = ['quotly <texto>']
+let handler = async (m, {
+    conn,
+    args,
+    usedPrefix,
+    command
+}) => {
+    let text
+
+    if (args.length >= 1) {
+        text = args.join(" ")
+    } else if (m.quoted && m.quoted.text) {
+        text = m.quoted.text
+    } else {
+        return conn.reply(m.chat, `☁️ 𝘼𝙂𝙍𝙀𝙂𝙐𝙀́ 𝙐𝙉 𝙏𝙀𝙓𝙏𝙊 𝙋𝘼𝙍𝘼 𝘾𝙍𝙀𝘼𝙍 𝙀𝙇 𝙎𝙏𝙄𝘾𝙆𝙀𝙍`, m)
+    }
+
+    if (!text) return m.reply('⚠️ 𝙔 𝙀𝙇 𝙏𝙀𝙓𝙏𝙊?')
+
+    const wordCount = text.trim().split(/\s+/).length
+    if (wordCount > 30) return m.reply('⚠️ 𝙈𝘼́𝙓𝙄𝙈𝙊 30 𝙋𝘼𝙇𝘼𝘽𝙍𝘼𝙎')
+
+    let pp = await conn.profilePictureUrl(m.sender, 'image').catch(_ => 'https://qu.ax/ZJKqt.jpg')
+
+    const obj = {
+        type: "quote",
+        format: "png",
+        backgroundColor: "#000000",
+        width: 512,
+        height: 768,
+        scale: 2,
+        messages: [{
+            entities: [],
+            avatar: true,
+            from: {
+                id: 1,
+                name: m.name,
+                photo: {
+                    url: pp
+                }
+            },
+            text: text,
+            replyMessage: {}
+        }]
+    }
+
+    const json = await axios.post('https://bot.lyo.su/quote/generate', obj, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+
+    const buffer = Buffer.from(json.data.result.image, 'base64')
+    const stiker = await sticker(buffer, false, '', '') // sin texto debajo del sticker
+
+    if (stiker) return conn.sendFile(m.chat, stiker, 'Quotly.webp', '', m)
+}
+
+handler.help = ['qc']
 handler.tags = ['sticker']
-handler.command = ['quotly', 'qc']
+handler.command = /^(qc)$/i
+
 export default handler
