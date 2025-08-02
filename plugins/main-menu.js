@@ -156,7 +156,7 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
 }, { quoted: m })
 
   } catch (e) {
-    conn.reply(m.chat, 'Lo sentimos, el menú tiene un error.', m)
+    conn.reply(m.chat, 'el menú tiene un error por qué el pendejo de angel es huevon :(', m)
     throw e
   }
 }
