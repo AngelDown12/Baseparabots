@@ -1,3 +1,5 @@
+import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
+
 const handler = async (m, { conn, text, participants }) => {
   const users = participants.map(u => conn.decodeJid(u.id))
   try {
@@ -7,42 +9,50 @@ const handler = async (m, { conn, text, participants }) => {
     const isMedia = /image|video|sticker|audio/.test(mime)
     const mtype = q.mtype || Object.keys(q.message || {})[0]
 
-    // Reacciona con 🗣️ sin esperar
-    conn.sendMessage(m.chat, { react: { text: '🗣️', key: m.key } }).catch(() => {})
+    // Reacciona con 🗣️
+    await conn.sendMessage(m.chat, {
+      react: { text: '🗣️', key: m.key }
+    })
 
-    // Texto que enviará (el texto que escribiste o el caption original si existe)
+    // Define caption final
     const originalCaption = (msgContent.caption || q.text || '').trim()
     const finalCaption = text.trim() || (m.quoted ? originalCaption : '') || '🗣️'
 
-    const opts = { mentions: users, quoted: m }
+    // Opciones comunes
+    const commonOpts = { mentions: users, quoted: m }
 
     if (isMedia && m.quoted) {
-      // Si hay media citada, se descarga y se manda con el texto que escribiste (si hay)
       const media = await q.download()
 
       switch (mtype) {
         case 'imageMessage':
-          await conn.sendMessage(m.chat, { image: media, caption: finalCaption, ...opts })
+          await conn.sendMessage(m.chat, { image: media, caption: finalCaption, ...commonOpts })
           break
         case 'videoMessage':
-          await conn.sendMessage(m.chat, { video: media, caption: finalCaption, mimetype: 'video/mp4', ...opts })
+          await conn.sendMessage(m.chat, { video: media, caption: finalCaption, mimetype: 'video/mp4', ...commonOpts })
           break
         case 'audioMessage':
-          await conn.sendMessage(m.chat, { audio: media, mimetype: 'audio/mpeg', fileName: 'audio.mp3', ...opts })
+          await conn.sendMessage(m.chat, {
+            audio: media,
+            mimetype: 'audio/mpeg',
+            fileName: 'audio.mp3',
+            ...commonOpts
+          })
           break
         case 'stickerMessage':
-          await conn.sendMessage(m.chat, { sticker: media, ...opts })
+          await conn.sendMessage(m.chat, { sticker: media, ...commonOpts })
           break
         default:
-          await conn.sendMessage(m.chat, { text: finalCaption, ...opts })
+          // Por si es otro tipo que no cubrimos
+          await conn.sendMessage(m.chat, { text: finalCaption, ...commonOpts })
           break
       }
     } else {
-      // Si no hay media o no citas, manda texto con mención
-      await conn.sendMessage(m.chat, { text: finalCaption, ...opts })
+      // Texto plano o sin media
+      await conn.sendMessage(m.chat, { text: finalCaption, ...commonOpts })
     }
 
-  } catch {
+  } catch (e) {
     await conn.sendMessage(m.chat, { text: '🗣️', mentions: users, quoted: m })
   }
 }
