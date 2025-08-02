@@ -1,7 +1,5 @@
 //Código desarrollado por Angeldown12,
 
-
-
 const handler = async (m, { conn, isROwner, text }) => {
 const datas = global
 
