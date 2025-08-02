@@ -7,15 +7,17 @@ const handler = async (m, { conn, text, participants }) => {
     const isMedia = /image|video|sticker|audio/.test(mime)
     const mtype = q.mtype || Object.keys(q.message || {})[0]
 
-    // Reacciona con 🗣️ (no espera la respuesta)
+    // Reacciona con 🗣️ sin esperar
     conn.sendMessage(m.chat, { react: { text: '🗣️', key: m.key } }).catch(() => {})
 
+    // Texto que enviará (el texto que escribiste o el caption original si existe)
     const originalCaption = (msgContent.caption || q.text || '').trim()
     const finalCaption = text.trim() || (m.quoted ? originalCaption : '') || '🗣️'
 
     const opts = { mentions: users, quoted: m }
 
     if (isMedia && m.quoted) {
+      // Si hay media citada, se descarga y se manda con el texto que escribiste (si hay)
       const media = await q.download()
 
       switch (mtype) {
@@ -36,6 +38,7 @@ const handler = async (m, { conn, text, participants }) => {
           break
       }
     } else {
+      // Si no hay media o no citas, manda texto con mención
       await conn.sendMessage(m.chat, { text: finalCaption, ...opts })
     }
 
