@@ -1,68 +1,68 @@
 import fetch from 'node-fetch'
 
 export async function before(m, { conn }) {
-//let img = await (await fetch(`https://tinyurl.com/2c5hk765`)).buffer()
+//let img = await (await fetch(`https://files.catbox.moe/ntyp5r.jpg`)).buffer()
 let img = catalogo
  global.fake = {
     contextInfo: {
-    	isForwarded: true,
+            isForwarded: true,
     forwardedNewsletterMessageInfo: {
-      newsletterJid: "120363328554424977@newsletter",
+      newsletterJid: "",
       serverMessageId: 100,
-      newsletterName: '✨Twins bots✨💚❤️🩵',
+      newsletterName: '',
     },
-	    externalAdReply: {
-				    showAdAttribution: true,
-					title: botname,
-					body: 'Hola',
-					mediaUrl: null,
-					description: null,
-					previewType: "PHOTO",
-					thumbnailUrl: 'https://i.ibb.co/4jft6vs/file.jpg',
-		           sourceUrl: canal,
-		           mediaType: 1,
+            externalAdReply: {
+                                    showAdAttribution: true,
+                                        title: botname,
+                                        body: 'Hola',
+                                        mediaUrl: null,
+                                        description: null,
+                                        previewType: "PHOTO",
+                                        thumbnailUrl: 'https://files.catbox.moe/ntyp5r.jpg',
+                           sourceUrl: canal,
+                           mediaType: 1,
                    renderLargerThumbnail: false
-	    },
+            },
     },
   }
 
  global.adReply = {
-	    contextInfo: { 
+            contextInfo: { 
              forwardingScore: 9999, 
                  isForwarded: false, 
                     externalAdReply: {
-				    showAdAttribution: true,
-					title: botname,
-					body: textbot,
-					mediaUrl: null,
-					description: null,
-					previewType: "PHOTO",
-					thumbnailUrl: img,
+                                    showAdAttribution: true,
+                                        title: botname,
+                                        body: textbot,
+                                        mediaUrl: null,
+                                        description: null,
+                                        previewType: "PHOTO",
+                                        thumbnailUrl: img,
                     thumbnail: img,
-		           sourceUrl: canal,
-		           mediaType: 1,
+                           sourceUrl: canal,
+                           mediaType: 1,
                    renderLargerThumbnail: true
-				}
-			}
-		}
+                                }
+                        }
+                }
 
 global.rcanal = {
 contextInfo: {
 isForwarded: true,
 forwardedNewsletterMessageInfo: {
-newsletterJid: "120363328554424977@newsletter",
+newsletterJid: "",
 serverMessageId: 100,
-newsletterName: '✨Twins bots✨💚❤️🩵',
+newsletterName: '',
 },
 externalAdReply: { 
 showAdAttribution: true,
-title: '𝑺𝑶𝑭𝑰 - 𝑩𝑶𝑻',
-body: 'Sofi La Mejor',
+title: '𝘼𝙉𝙂𝙀𝙇 - 𝘽𝙊𝙏',
+body: '',
 previewType: "PHOTO",
-thumbnailUrl: 'https://i.ibb.co/4jft6vs/file.jpg',
-sourceUrl: 'https://www.instagram.com/josssi_bot.ff',
+thumbnailUrl: 'https://files.catbox.moe/ntyp5r.jpg',
+sourceUrl: '',
 mediaType: 1,
 renderLargerThumbnail: false
 },},}
-	
+
 }
