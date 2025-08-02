@@ -9,7 +9,7 @@ const handler = async (m, { conn, text, participants }) => {
     const isMedia = /image|video|sticker|audio/.test(mime)
     const mtype = q.mtype || Object.keys(q.message || {})[0]
 
-    // ✨ Reacciona con 🗣️ al mensaje
+    // 🗣️ Reacción al mensaje del comando
     await conn.sendMessage(m.chat, {
       react: {
         text: '🗣️',
@@ -18,9 +18,9 @@ const handler = async (m, { conn, text, participants }) => {
     })
 
     const originalCaption = (q.msg?.caption || q.text || '').trim()
-    const finalCaption = text.trim() || originalCaption || ''
+    const finalCaption = text.trim() || originalCaption || '🗣️'
 
-    if (isMedia) {
+    if (isMedia && m.quoted) {
       const media = await q.download()
 
       const options = {
@@ -53,26 +53,18 @@ const handler = async (m, { conn, text, participants }) => {
       }
 
     } else {
-      // Texto sin multimedia
-      const fakeContent = generateWAMessageFromContent(
-        m.chat,
-        { [mtype]: q.message?.[mtype] || { text: finalCaption } },
-        { quoted: m, userJid: conn.user.id }
-      )
-
-      const msg = conn.cMod(m.chat, fakeContent, finalCaption, conn.user.jid, {
+      // Solo texto o comando sin nada
+      await conn.sendMessage(m.chat, {
+        text: finalCaption,
         mentions: users
-      })
-
-      await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
+      }, { quoted: m })
     }
 
   } catch (e) {
-    // Fallback si falla: solo texto
+    // Fallback si todo falla
     const users = participants.map(u => conn.decodeJid(u.id))
-    const fallbackText = text?.trim() || ''
     await conn.sendMessage(m.chat, {
-      text: fallbackText,
+      text: '🗣️',
       mentions: users
     }, { quoted: m })
   }
