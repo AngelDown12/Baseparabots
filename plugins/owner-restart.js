@@ -1,3 +1,7 @@
+//Código desarrollado por Angeldown12,
+
+
+
 const handler = async (m, { conn, isROwner, text }) => {
 const datas = global
 
@@ -7,7 +11,7 @@ await delay(1000 * 1)
 await conn.sendMessage(m.chat, {text: `🚀🚀🚀🚀`, edit: key})
 await delay(1000 * 1)
 await conn.sendMessage(m.chat, {text: `🚀🚀🚀🚀🚀🚀`, edit: key})
-await conn.sendMessage(m.chat, {text: `𝙍𝙚𝙞𝙣𝙞𝙘𝙞𝙖𝙧 | 𝙍𝙚𝙨𝙩𝙖𝙧𝙩`, edit: key})
+await conn.sendMessage(m.chat, {text: `𝐋𝐢𝐬𝐭𝐨 𝐣𝐞𝐟𝐞𝐜𝐢𝐭𝐨 𝐀𝐧𝐠𝐞𝐥`, edit: key})
 //process.send('reset')
 process.exit(0); 
 }
