@@ -1,18 +1,11 @@
-let handler = async (m, { conn, text, isROwner, isOwner }) => {
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+  if (!m.isGroup) throw '❗Este comando solo se usa en grupos.'
+  if (!args[0]) throw `✳️ Usa el comando así:\n\n${usedPrefix + command} Adiós @user 😈`
 
-if (text) {
-global.db.data.chats[m.chat].sBye = text
-conn.reply(m.chat, `*LA DESPEDIDA DEL GRUPO HA SIDO CONFIGURADA*`, m)  
-
-} else {
-    conn.reply(m.chat, `*_ESCRIBA EL MENSAJE DE DESPEDIDA_*\n*_OPCIONAL PUEDE USAR LO QUE ESTA CON "@" PARA AGREGAR MÁS INFORMACIÓN:_*\n\n*⚡ @user (Mención al usuario(a))*\n\n*RECUERDE QUE EL "@" ES OPCIONAL*`, m)
+  global.db.data.chats[m.chat].sBye = args.join(' ')
+  m.reply('✅ Despedida personalizada guardada.')
 }
-}
-
-handler.help = ['setbye @user + texto']
-handler.tags = ['group']
-handler.command = ['setbye', 'despedida'] 
-handler.botAdmin = true
-handler.admin = true
+handler.command = ['setbye']
 handler.group = true
+handler.admin = true
 export default handler
