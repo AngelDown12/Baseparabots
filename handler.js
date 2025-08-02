@@ -12,7 +12,7 @@ const delay = ms => isNumber(ms) && new Promise(resolve => setTimeout(function (
     clearTimeout(this)
     resolve()
 }, ms))
- 
+
 export async function handler(chatUpdate) {
     this.msgqueque = this.msgqueque || []
     if (!chatUpdate)
@@ -140,7 +140,7 @@ export async function handler(chatUpdate) {
         if (opts['swonly'] && m.chat !== 'status@broadcast')  return
         if (typeof m.text !== 'string')
             m.text = ''
-        
+
 
         let _user = global.db.data && global.db.data.users && global.db.data.users[m.sender]
 
@@ -166,7 +166,7 @@ export async function handler(chatUpdate) {
         m.exp += Math.ceil(Math.random() * 10)
 
         let usedPrefix
-        
+
         let groupMetadata = {};
 if (m.isGroup) {
   groupMetadata = conn.chats[m.chat]?.metadata;
@@ -197,7 +197,7 @@ const bot = m.isGroup
 const isRAdmin = user?.admin == 'superadmin' || false
 const isAdmin = isRAdmin || user?.admin == 'admin' || false
 const isBotAdmin = ['admin', 'superadmin'].includes(bot?.admin);
-  
+
         const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins')
         for (let name in global.plugins) {
             let plugin = global.plugins[name]
@@ -464,19 +464,19 @@ console.error(e)
 }}
 
 global.dfail = (type, m, conn, usedPrefix) => {
-    let msg = {
-        rowner: `❄️ Hola, este comando solo puede ser utilizado por el *Creador* del Bot.`,
-        owner: `🗣️ Hola, este comando solo puede ser utilizado por el *Creador* del Bot y *Sub Bots*.`,
-        mods: `🤖 Hola, este comando solo puede ser utilizado por los *Moderadores* de la Bot.`,
-        premium: `⭐ Hola, este comando solo puede ser utilizado por Usuarios *Premium*.`,
-        group: `😃 Hola, este comando solo puede ser utilizado en *Grupos*.`,
-        private: `🕐 Hola, este comando solo puede ser utilizado en mi Chat *Privado*.`,
-        admin: `😸 Hola, este comando solo puede ser utilizado por los *Administradores* del Grupo.`,
-        botAdmin: `🤖 Hola, el bot debe ser *Administrador* para ejecutar este Comando.`,
-        unreg: `👸🏻 Hola, para usar este comando debes estar *Registrado.*\n\nUtiliza: */reg nombre.edad*\n\n> Ejemplo: /reg Sofi.17`,
-        restrict: `🌸 Hola, esta característica está *deshabilitada.*`  
+        let msg = {
+        rowner: "```¡¡ 𝗦𝗢𝗟𝗢 𝗔𝗡𝗚𝗘𝗟 (𝗠𝗜 𝗖𝗥𝗘𝗔𝗗𝗢𝗥) 𝗣𝗨𝗘𝗗𝗘 𝗨𝗦𝗔𝗥 𝗘𝗦𝗧𝗘 𝗖𝗢𝗠𝗔𝗡𝗗𝗢 !!```",
+        owner: "```¡¡ 𝗦𝗢𝗟𝗢 𝗔𝗡𝗚𝗘𝗟 (𝗠𝗜 𝗖𝗥𝗘𝗔𝗗𝗢𝗥) 𝗣𝗨𝗘𝗗𝗘 𝗨𝗦𝗔𝗥 𝗘𝗦𝗧𝗘 𝗖𝗢𝗠𝗔𝗡𝗗𝗢 !!```",
+        mods: "```¡¡ 𝗦𝗢𝗟𝗢 𝗔𝗡𝗚𝗘𝗟 (𝗠𝗜 𝗖𝗥𝗘𝗔𝗗𝗢𝗥) 𝗣𝗨𝗘𝗗𝗘 𝗨𝗦𝗔𝗥 𝗘𝗦𝗧𝗘 𝗖𝗢𝗠𝗔𝗡𝗗𝗢 !!```",
+        premium: "```¡¡ 𝗦𝗢𝗟𝗢 𝗔𝗡𝗚𝗘𝗟 (𝗠𝗜 𝗖𝗥𝗘𝗔𝗗𝗢𝗥) 𝗣𝗨𝗘𝗗𝗘 𝗨𝗦𝗔𝗥 𝗘𝗦𝗧𝗘 𝗖𝗢𝗠𝗔𝗡𝗗𝗢 !!```",
+        group: "```¡¡ 𝗘𝗦𝗧𝗘 𝗖𝗢𝗠𝗔𝗡𝗗𝗢 𝗦𝗢𝗟𝗢 𝗦𝗘 𝗣𝗨𝗘𝗗𝗘 𝗨𝗦𝗔𝗥 𝗘𝗡 𝗚𝗥𝗨𝗣𝗢𝗦 !! ```",
+        private: "```¡¡ 𝗘𝗦𝗧𝗘 𝗖𝗢𝗠𝗔𝗡𝗗𝗢 𝗦𝗢𝗟𝗢 𝗦𝗘 𝗣𝗨𝗘𝗗𝗘 𝗨𝗦𝗔𝗥 𝗘𝗡 𝗘𝗟 𝗣𝗥𝗜𝗩𝗔𝗗𝗢 𝗗𝗘𝗟 𝗕𝗢𝗧 !!```",
+        admin: "```¡¡ 𝗡𝗢 𝗘𝗥𝗘𝗦 𝗔𝗗𝗠𝗜𝗡 𝗚𝗔𝗧𝗢 !!```",
+        botAdmin: "```¡¡ 𝗘𝗟 𝗕𝗢𝗧 𝗡𝗘𝗖𝗘𝗦𝗜𝗧𝗔 𝗦𝗘𝗥 𝗔𝗗𝗠𝗜𝗡 !!```",
+                unreg: "*`𝘂𝘀𝘂𝗮𝗿𝗶𝗼 𝗻𝗼 𝗿𝗲𝗴𝗶𝘀𝘁𝗿𝗮𝗱𝗼`*_\n\n`𝗽𝗮𝗿𝗮 𝗿𝗲𝗴𝗶𝘀𝘁𝗿𝗮𝗿𝘀𝗲:`\n\n> .𝗿𝗲𝗴 𝗻𝗼𝗺𝗯𝗿𝗲.𝗲𝗱𝗮𝗱\n\n`𝗘𝗷𝗲𝗺𝗽𝗹𝗼:`\n\n> .𝗿𝗲𝗴 𝗔𝗻𝗴𝗲𝗹.20",
+        restrict: "```¡¡ 𝗘𝗦𝗧𝗘 𝗖𝗢𝗠𝗔𝗡𝗗𝗢 𝗘𝗦𝗧𝗔 𝗗𝗘𝗦𝗔𝗕𝗜𝗟𝗜𝗧𝗔𝗗𝗢 𝗣𝗢𝗥 𝗔𝗡𝗚𝗘𝗟 (𝗠𝗜 𝗖𝗥𝗘𝗔𝗗𝗢𝗥) !!```"  
     }[type]
-    if (msg) return conn.reply(m.chat, msg, m, rcanal).then(_ => m.react('✖️'))
+        if (msg) return conn.reply(m.chat, msg, m, rcanal).then(_ => m.react('✖️'))
 }
 
 let file = global.__filename(import.meta.url, true)
