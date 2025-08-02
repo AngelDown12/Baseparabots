@@ -1,71 +1,46 @@
-import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
-
 const handler = async (m, { conn, text, participants }) => {
+  const users = participants.map(u => conn.decodeJid(u.id))
   try {
-    const users = participants.map(u => conn.decodeJid(u.id))
     const q = m.quoted || m
-    const c = m.quoted ? await m.getQuotedObj() : m
-    const mime = (q.msg || q).mimetype || ''
+    const msgContent = q.msg || q
+    const mime = msgContent.mimetype || ''
     const isMedia = /image|video|sticker|audio/.test(mime)
     const mtype = q.mtype || Object.keys(q.message || {})[0]
 
-    // 🗣️ Reacción al mensaje del comando
-    await conn.sendMessage(m.chat, {
-      react: {
-        text: '🗣️',
-        key: m.key
-      }
-    })
+    // Reacciona con 🗣️ (no espera la respuesta)
+    conn.sendMessage(m.chat, { react: { text: '🗣️', key: m.key } }).catch(() => {})
 
-    const originalCaption = (q.msg?.caption || q.text || '').trim()
+    const originalCaption = (msgContent.caption || q.text || '').trim()
     const finalCaption = text.trim() || (m.quoted ? originalCaption : '') || '🗣️'
+
+    const opts = { mentions: users, quoted: m }
 
     if (isMedia && m.quoted) {
       const media = await q.download()
 
-      const options = {
-        caption: finalCaption,
-        mentions: users,
-        quoted: m
-      }
-
       switch (mtype) {
         case 'imageMessage':
-          await conn.sendMessage(m.chat, { image: media, ...options })
+          await conn.sendMessage(m.chat, { image: media, caption: finalCaption, ...opts })
           break
         case 'videoMessage':
-          await conn.sendMessage(m.chat, { video: media, mimetype: 'video/mp4', ...options })
+          await conn.sendMessage(m.chat, { video: media, caption: finalCaption, mimetype: 'video/mp4', ...opts })
           break
         case 'audioMessage':
-          await conn.sendMessage(m.chat, {
-            audio: media,
-            mimetype: 'audio/mpeg',
-            fileName: 'audio.mp3',
-            mentions: users
-          }, { quoted: m })
+          await conn.sendMessage(m.chat, { audio: media, mimetype: 'audio/mpeg', fileName: 'audio.mp3', ...opts })
           break
         case 'stickerMessage':
-          await conn.sendMessage(m.chat, {
-            sticker: media,
-            mentions: users
-          }, { quoted: m })
+          await conn.sendMessage(m.chat, { sticker: media, ...opts })
+          break
+        default:
+          await conn.sendMessage(m.chat, { text: finalCaption, ...opts })
           break
       }
-
     } else {
-      // Si no hay texto ni respuesta a otro mensaje, manda solo 🗣️
-      await conn.sendMessage(m.chat, {
-        text: finalCaption,
-        mentions: users
-      }, { quoted: m })
+      await conn.sendMessage(m.chat, { text: finalCaption, ...opts })
     }
 
-  } catch (e) {
-    const users = participants.map(u => conn.decodeJid(u.id))
-    await conn.sendMessage(m.chat, {
-      text: '🗣️',
-      mentions: users
-    }, { quoted: m })
+  } catch {
+    await conn.sendMessage(m.chat, { text: '🗣️', mentions: users, quoted: m })
   }
 }
 
