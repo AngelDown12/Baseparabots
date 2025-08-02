@@ -1,39 +1,62 @@
-let handler = async (m, {conn, usedPrefix, text}) => {
-  if (isNaN(text) && !text.match(/@/g)) {
-  } else if (isNaN(text)) {
-    var number = text.split`@`[1];
-  } else if (!isNaN(text)) {
-    var number = text;
+let handler = async (m, { conn, text }) => {
+  let number, user;
+
+  // Si no se proporciona texto ni se responde a alguien
+  if (!text && !m.quoted) {
+    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
+    return conn.reply(m.chat, 'Etiqueta o responde a alguien para darle admin.', m);
   }
 
-  if (!text && !m.quoted)
-    return conn.reply(
-      m.chat,
-      '🚩 Use el comandó correctamente\n\n`Ejemplo :`\n\n> . promote @Sisked',
-      m
-    );
-  if (number.length > 13 || (number.length < 11 && number.length > 0))
-    return conn.reply(m.chat, `_. ᩭ✎El número ingresado es incorrecto, por favor ingrese el número correcto_`, m);
+  // Si hay texto, verificar si es número, mención o no válido
+  if (text) {
+    if (isNaN(text)) {
+      if (text.includes('@')) {
+        number = text.split('@')[1];
+      }
+    } else {
+      number = text;
+    }
+  }
+
+  // Validación de longitud de número
+  if (number && (number.length > 13 || number.length < 11)) {
+    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
+    return conn.reply(m.chat, 'Ese número no es válido.', m);
+  }
+
+  // Obtener el usuario en formato JID
+  try {
+    if (number) {
+      user = number + "@s.whatsapp.net";
+    } else if (m.quoted && m.quoted.sender) {
+      user = m.quoted.sender;
+    }
+  } catch {
+    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
+    return conn.reply(m.chat, 'No se pudo procesar al usuario.', m);
+  }
+
+  // Si no se pudo obtener el usuario
+  if (!user) {
+    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
+    return conn.reply(m.chat, 'No encontré a quién darle admin.', m);
+  }
 
   try {
-    if (text) {
-      var user = number + "@s.whatsapp.net";
-    } else if (m.quoted.sender) {
-      var user = m.quoted.sender;
-    } else if (m.mentionedJid) {
-      var user = number + "@s.whatsapp.net";
-    }
-  } catch (e) {
-  } finally {
-    conn.groupParticipantsUpdate(m.chat, [user], "promote");
-    conn.reply(m.chat, `🚩 𝘈𝘤𝘤𝘪𝘰́𝘯 𝘳𝘦𝘢𝘭𝘪𝘻𝘢𝘥𝘢 `, m);
+    await conn.groupParticipantsUpdate(m.chat, [user], "promote");
+    // No dice nada si sale bien
+  } catch {
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
+    await conn.reply(m.chat, 'No se pudo dar admin.', m);
   }
 };
-handler.help = ["@usuario*"].map((v) => "promote " + v);
+
+handler.help = ["@usuario*"].map(v => "promote " + v);
 handler.tags = ["group"];
-handler.command = /^(promote|daradmin|darpoder)$/i;
+handler.command = /^(promote|pornote|darpoder)$/i;
 handler.group = true;
 handler.admin = true;
 handler.botAdmin = true;
 handler.fail = null;
+
 export default handler;
