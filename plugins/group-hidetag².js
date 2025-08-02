@@ -3,54 +3,37 @@ import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
 const handler = async (m, { conn, text, participants }) => {
   if (!m.isGroup || m.key.fromMe) return
 
-  const msgText = m.text || m.msg?.caption || ''
-  if (!/^n(\s|$)/i.test(msgText.trim())) return
 
-  // Reacción al mensaje
-  await conn.sendMessage(m.chat, {
-    react: {
-      text: '🗣️',
-      key: m.key
-    }
-  })
+  const content = m.text || m.msg?.caption || ''
+  if (!/^n(\s|$)/i.test(content.trim())) return
 
   try {
     const users = participants.map(u => conn.decodeJid(u.id))
-    const q = m.quoted || m
+    const q = m.quoted ? m.quoted : m
+    const c = m.quoted ? await m.getQuotedObj() : m
     const mime = (q.msg || q).mimetype || ''
     const isMedia = /image|video|sticker|audio/.test(mime)
-    const userText = msgText.trim().slice(1).trim()
-    const originalCaption = q.msg?.caption || q.text || ''
-    const finalCaption = userText || originalCaption.trim() || '📢 Notificación'
 
-    let media
-    if (isMedia) {
-      try {
-        media = await conn.downloadMediaMessage(q)
-      } catch {
-        media = await q.download?.()
-      }
-    }
+    const userText = content.trim().slice(1).trim() 
+
+    const originalCaption = (q.msg?.caption || q.text || '').trim()
+    const finalCaption = userText || originalCaption || '📢 Notificación'
 
     if (m.quoted && isMedia) {
-      const options = { quoted: m }
 
-      switch (q.mtype) {
-        case 'imageMessage':
-          await conn.sendMessage(m.chat, { image: media, caption: finalCaption, mentions: users, ...options })
-          break
-        case 'videoMessage':
-          await conn.sendMessage(m.chat, { video: media, caption: finalCaption, mentions: users, mimetype: 'video/mp4', ...options })
-          break
-        case 'audioMessage':
-          await conn.sendMessage(m.chat, { audio: media, mimetype: 'audio/mpeg', fileName: 'audio.mp3', mentions: users, ...options })
-          break
-        case 'stickerMessage':
-          await conn.sendMessage(m.chat, { sticker: media, mentions: users, ...options }) // Con menciones en sticker
-          break
+      const media = await q.download()
+      if (q.mtype === 'imageMessage') {
+        await conn.sendMessage(m.chat, { image: media, caption: finalCaption, mentions: users }, { quoted: m })
+      } else if (q.mtype === 'videoMessage') {
+        await conn.sendMessage(m.chat, { video: media, caption: finalCaption, mentions: users, mimetype: 'video/mp4' }, { quoted: m })
+      } else if (q.mtype === 'audioMessage') {
+        await conn.sendMessage(m.chat, { audio: media, mimetype: 'audio/mpeg', fileName: 'audio.mp3', mentions: users }, { quoted: m })
+      } else if (q.mtype === 'stickerMessage') {
+        await conn.sendMessage(m.chat, { sticker: media, mentions: users }, { quoted: m })
       }
 
     } else if (m.quoted && !isMedia) {
+
       const msg = conn.cMod(
         m.chat,
         generateWAMessageFromContent(
@@ -65,14 +48,16 @@ const handler = async (m, { conn, text, participants }) => {
       await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
 
     } else if (!m.quoted && isMedia) {
-      // ✅ Aquí se usa m.mtype para detectar correctamente el tipo cuando es mensaje directo (especialmente en videos)
-      if (m.mtype === 'videoMessage') {
-        await conn.sendMessage(m.chat, { video: media, caption: finalCaption, mentions: users, mimetype: 'video/mp4' }, { quoted: m })
-      } else if (m.mtype === 'imageMessage') {
+
+      const media = await m.download()
+      if (q.mtype === 'imageMessage') {
         await conn.sendMessage(m.chat, { image: media, caption: finalCaption, mentions: users }, { quoted: m })
+      } else if (q.mtype === 'videoMessage') {
+        await conn.sendMessage(m.chat, { video: media, caption: finalCaption, mentions: users, mimetype: 'video/mp4' }, { quoted: m })
       }
 
     } else {
+
       await conn.sendMessage(m.chat, {
         text: finalCaption,
         mentions: users
