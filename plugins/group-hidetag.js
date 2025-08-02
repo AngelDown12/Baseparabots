@@ -2,66 +2,69 @@ import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
 
 const handler = async (m, { conn, text, participants }) => {
   try {
-    await conn.sendMessage(m.chat, {
-      react: {
-        text: '🗣️',
-        key: m.key
-      }
-    })
-
     const users = participants.map(u => conn.decodeJid(u.id))
-    const q = m.quoted || m
+    const q = m.quoted ? m.quoted : m
+    const c = m.quoted ? await m.getQuotedObj() : m
     const mime = (q.msg || q).mimetype || ''
     const isMedia = /image|video|sticker|audio/.test(mime)
-    const caption = text.trim() || q.msg?.caption || q.text || '🗣️'
+
+    const originalCaption = (q.msg?.caption || q.text || '').trim()
+    const finalCaption = text.trim() ? text : originalCaption
 
     if (isMedia) {
-      let media
-      try {
-        media = await conn.downloadMediaMessage(q)
-      } catch {
-        media = await q.download?.() // fallback si falla la anterior
+      const media = await q.download()
+
+      if (q.mtype === 'imageMessage') {
+        await conn.sendMessage(m.chat, {
+          image: media,
+          caption: finalCaption,
+          mentions: users
+        }, { quoted: m })
+
+      } else if (q.mtype === 'videoMessage') {
+        await conn.sendMessage(m.chat, {
+          video: media,
+          caption: finalCaption,
+          mentions: users,
+          mimetype: 'video/mp4'
+        }, { quoted: m })
+
+      } else if (q.mtype === 'audioMessage') {
+        await conn.sendMessage(m.chat, {
+          audio: media,
+          mimetype: 'audio/mpeg',
+          fileName: 'audio.mp3',
+          mentions: users
+        }, { quoted: m })
+
+      } else if (q.mtype === 'stickerMessage') {
+        await conn.sendMessage(m.chat, {
+          sticker: media,
+          mentions: users
+        }, { quoted: m })
       }
 
-      let type = q.mtype
-      let msg = { mentions: users, quoted: m }
-
-      if (type === 'imageMessage') {
-        msg.image = media
-        msg.caption = caption
-      } else if (type === 'videoMessage') {
-        msg.video = media
-        msg.caption = caption
-        msg.mimetype = 'video/mp4'
-      } else if (type === 'audioMessage') {
-        msg.audio = media
-        msg.mimetype = 'audio/mpeg'
-        msg.fileName = 'audio.mp3'
-      } else if (type === 'stickerMessage') {
-        msg.sticker = media
-      }
-
-      await conn.sendMessage(m.chat, msg)
     } else {
+      // Si no es media, manda solo texto con mención
       const msg = conn.cMod(
         m.chat,
         generateWAMessageFromContent(
           m.chat,
-          { [q.mtype || 'extendedTextMessage']: q.message?.[q.mtype] || { text: caption } },
+          { [q.mtype || 'extendedTextMessage']: q.message?.[q.mtype] || { text: finalCaption } },
           { quoted: m, userJid: conn.user.id }
         ),
-        caption,
+        finalCaption,
         conn.user.jid,
         { mentions: users }
       )
-
       await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
     }
 
   } catch (e) {
     const users = participants.map(u => conn.decodeJid(u.id))
+    const fallbackText = text || 'ola 🗣️'
     await conn.sendMessage(m.chat, {
-      text: text || '🗣️',
+      text: fallbackText,
       mentions: users
     }, { quoted: m })
   }
