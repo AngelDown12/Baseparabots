@@ -18,7 +18,7 @@ const handler = async (m, { conn, text, participants }) => {
     })
 
     const originalCaption = (q.msg?.caption || q.text || '').trim()
-    const finalCaption = text.trim() || originalCaption || '🗣️'
+    const finalCaption = text.trim() || (m.quoted ? originalCaption : '') || '🗣️'
 
     if (isMedia && m.quoted) {
       const media = await q.download()
@@ -53,7 +53,7 @@ const handler = async (m, { conn, text, participants }) => {
       }
 
     } else {
-      // Solo texto o comando sin nada
+      // Si no hay texto ni respuesta a otro mensaje, manda solo 🗣️
       await conn.sendMessage(m.chat, {
         text: finalCaption,
         mentions: users
@@ -61,7 +61,6 @@ const handler = async (m, { conn, text, participants }) => {
     }
 
   } catch (e) {
-    // Fallback si todo falla
     const users = participants.map(u => conn.decodeJid(u.id))
     await conn.sendMessage(m.chat, {
       text: '🗣️',
