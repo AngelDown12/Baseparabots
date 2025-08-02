@@ -10,40 +10,40 @@ import moment from 'moment-timezone'
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
 global.owner = [
-  ['50765609370', 'jid', '𝑺𝑶𝑭𝑰', true],
-  ['95138458116106', 'lid', 'Sofi', true],
-  ['584123989549', 'jid', '@Sisked 👑', true],
-  ['256237983817905', 'lid', 'sisked', true],
-  ['50765609370'],
-  ['50765609370'],
-  ['584123989549']
+  ['5217227584934', 'jid', '𝘼𝙉𝙂𝙀𝙇', true],
+  [''],
+  [''],
+  [''],
+  [''],
+  [''],
+  ['']
 ]
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
 global.mods = []
 global.prems = []
-   
+
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
-global.packname = `𝑺𝑶𝑭𝑰 - 𝑩𝑶𝑻`
-global.author = '{\n "bot": {\n   "name": "𝑺𝑶𝑭𝑰 - 𝑩𝑶𝑻",\n     "author": "𝑺𝑶𝑭𝑰",\n   "status_bot": "active"\n }\n}'
-global.wait = '𝑺𝑶𝑭𝑰 - 𝑩𝑶𝑻'
-global.botname = '𝑺𝑶𝑭𝑰 - 𝑩𝑶𝑻'
-global.textbot = `WhatsApp Bot Sofi 👸🏻`
-global.listo = 'Finalizado ✯'
-global.namechannel = '𝑺𝑰𝑺𝑲𝑬𝑫 𝑩𝑶𝑻'
+global.packname = `𝘼𝙉𝙂𝙀𝙇 - 𝘽𝙊𝙏`
+global.author = '{\n "𝗕𝗼𝘁": {\n   "name": "𝘼𝙉𝙂𝙀𝙇 - 𝘽𝙊𝙏",\n     "author": "𝘼𝙉𝙂𝙀𝙇",\n   "status_bot": "active"\n }\n}'
+global.wait = '𝘼𝙉𝙂𝙀𝙇 - 𝘽𝙊𝙏'
+global.botname = '𝘼𝙉𝙂𝙀𝙇 - 𝘽𝙊𝙏'
+global.textbot = `𝗪𝗵𝗮𝘁𝘀𝗮𝗽𝗽 𝘼𝙉𝙂𝙀𝙇 𝘽𝙊𝙏 ☕`
+global.listo = '𝗙𝗶𝗻𝗮𝗹𝗶𝘇𝗮𝗱𝗼 ☕'
+global.namechannel = '𝘼𝙉𝙂𝙀𝙇 𝘽𝙊𝙏 ☕'
 global.baileys = '@whiskeysockets/baileys'
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
-global.catalogo = fs.readFileSync('./storage/img/catalogo.png')
-global.miniurl = fs.readFileSync('./storage/img/siskedurl.jpg')
+global.catalogo = 'https://files.catbox.moe/ntyp5r.jpg'
+global.miniurl = 'https://files.catbox.moe/ntyp5r.jpg'
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
-global.group = 'https://chat.whatsapp.com/JultL94aPtb5AzIeeuDvpX'
-global.canal = 'https://whatsapp.com/channel/0029VamyjBXJuyACXCuuHm3l'
+global.group = ''
+global.canal = ''
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
@@ -55,7 +55,7 @@ global.cheerio = cheerio
 global.fs = fs
 global.fetch = fetch
 global.axios = axios
-global.moment = moment	
+global.moment = moment        
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
