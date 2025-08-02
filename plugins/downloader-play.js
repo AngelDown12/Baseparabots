@@ -1,138 +1,130 @@
 import fetch from "node-fetch";
-import yts from 'yt-search';
-import axios from "axios";
+import yts from "yt-search";
 
-const formatosAudio = ['mp3', 'm4a', 'webm', 'acc', 'flac', 'opus', 'ogg', 'wav'];
-
-const ddownr = {
-  descargar: async (url, formato) => {
-    if (!formatosAudio.includes(formato)) {
-      throw new Error('Formato no soportado, verifica la lista de formatos disponibles.');
-    }
-
-    const config = {
-      method: 'GET',
-      url: `https://p.oceansaver.in/ajax/download.php?format=${formato}&url=${encodeURIComponent(url)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    };
-
-    try {
-      const response = await axios.request(config);
-
-      if (response.data && response.data.success) {
-        const { id, title, info } = response.data;
-        const { image } = info;
-        const downloadUrl = await ddownr.verificarProgreso(id);
-
-        return {
-          id: id,
-          image: image,
-          title: title,
-          downloadUrl: downloadUrl
-        };
-      } else {
-        throw new Error('Fallo al obtener los detalles del video.');
-      }
-    } catch (error) {
-      console.error('Error al intentar obtener el audio desde la primera API:', error);
-      // Si la primera API falla, se intenta con la API de respaldo
-      return await ddownr.obtenerAudioDeRespaldo(url);
-    }
+// Lista de APIs prioritarias (la de vreden primero)
+const APIS = [
+  {
+    name: "vreden",
+    url: (videoUrl) => `https://api.vreden.my.id/api/ytmp3?url=${encodeURIComponent(videoUrl)}&quality=64`, // Cambié la calidad a 64 kbps
+    extract: (data) => data?.result?.download?.url
   },
-  verificarProgreso: async (id) => {
-    const config = {
-      method: 'GET',
-      url: `https://p.oceansaver.in/ajax/progress.php?id=${id}`,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    };
-
-    try {
-      while (true) {
-        const response = await axios.request(config);
-
-        if (response.data && response.data.success && response.data.progress === 1000) {
-          return response.data.download_url;
-        }
-        await new Promise(resolve => setTimeout(resolve, 5000));
-      }
-    } catch (error) {
-      console.error('Error al verificar el progreso:', error);
-      throw error;
-    }
+  {
+    name: "zenkey",
+    url: (videoUrl) => `https://api.zenkey.my.id/api/download/ytmp3?apikey=zenkey&url=${encodeURIComponent(videoUrl)}&quality=64`, // Añadí calidad baja
+    extract: (data) => data?.result?.download?.url
   },
-
-  obtenerAudioDeRespaldo: async (url) => {
-    try {
-      const api = await (await fetch(`https://api.neoxr.eu/api/youtube?url=${url}&type=audio&quality=128kbps&apikey=GataDios`)).json();
-      const result = api.data.url;
-      return { downloadUrl: result };
-    } catch (error) {
-      console.error('Error al obtener el audio desde la API de respaldo:', error);
-      throw error;
+  {
+    name: "yt1s",
+    url: (videoUrl) => `https://yt1s.io/api/ajaxSearch?q=${encodeURIComponent(videoUrl)}`,
+    extract: async (data) => {
+      const k = data?.links?.mp3?.auto?.k;
+      return k ? `https://yt1s.io/api/ajaxConvert?vid=${data.vid}&k=${k}&quality=64` : null; // Ajusté la calidad en la URL
     }
   }
+];
+
+// Función mejorada para obtener audio
+const getAudioUrl = async (videoUrl) => {
+  let lastError = null;
+
+  for (const api of APIS) {
+    try {
+      console.log(`Probando API: ${api.name}`);
+      const apiUrl = api.url(videoUrl);
+      const response = await fetch(apiUrl, { timeout: 5000 }); // Timeout de 5 segundos
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+      const audioUrl = await api.extract(data);
+
+      if (audioUrl) {
+        console.log(`Éxito con API: ${api.name}`);
+        return audioUrl;
+      }
+    } catch (error) {
+      console.error(`Error con API ${api.name}:`, error.message);
+      lastError = error;
+      continue; // Intentar con la siguiente API
+    }
+  }
+
+  throw lastError || new Error("Todas las APIs fallaron");
 };
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text || !text.trim()) {
+    throw `⭐ 𝘌𝘯𝘷𝘪𝘢 𝘦𝘭 𝘯𝘰𝘮𝘣𝘳𝘦 𝘥𝘦 𝘭𝘢 𝘤𝘢𝘯𝘤𝘪ó𝘯\n\n» 𝘌𝘫𝘦𝘮𝘱𝘭𝘰: ${usedPrefix + command} Bad Bunny - Monaco`;
+  }
+
   try {
-    if (!text.trim()) {
-      return conn.reply(m.chat, `Ingresa el nombre de la música que deseas descargar.`, m);
+    await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
+
+    // Búsqueda más rápida con límite de resultados
+    const searchResults = await yts({ query: text.trim(), hl: 'es', gl: 'ES' });
+    const video = searchResults.videos[0];
+    if (!video) throw new Error("No se encontró el video");
+
+    // Verificar duración (max 10 minutos para evitar audios largos)
+    if (video.seconds > 600) {
+      throw "❌ El audio es muy largo (máximo 10 minutos)";
     }
 
-    const search = await yts(text);
-    if (!search.all || search.all.length === 0) {
-      return m.reply('No se encontraron resultados para tu búsqueda.');
+    await conn.sendMessage(m.chat, {
+  image: { url: video.thumbnail },
+  caption: `🎵 *Título:* ${video.title}
+📺 *Canal:* ${video.author.name}
+⏱ *Duración:* ${video.timestamp}
+👀 *Vistas:* ${video.views.toLocaleString()}
+📅 *Publicado:* ${video.ago || "-"}
+🌐 *Enlace:* ${video.url}`,
+  contextInfo: {
+    externalAdReply: {
+      title: video.title,
+      body: video.author.name,
+      thumbnailUrl: video.thumbnail,
+      mediaType: 1,
+      renderLargerThumbnail: true,
+      showAdAttribution: true,
+      sourceUrl: video.url
+    }
+  }
+}, { quoted: m });
+
+    // Obtener audio (con reintentos)
+    let audioUrl;
+    try {
+      audioUrl = await getAudioUrl(video.url);
+    } catch (e) {
+      console.error("Error al obtener audio:", e);
+      throw "⚠️ Error al procesar el audio. Intenta con otra canción";
     }
 
-    const videoInfo = search.all[0];
-    const { title, thumbnail, timestamp, views, ago, url } = videoInfo;
-    const vistas = formatoVistas(views);
-    const infoMessage = `> 𝙴𝙽𝚅𝙸𝙰𝙽𝙳𝙾 𝙿𝙴𝙳𝙸𝙳𝙾.`;
-    const thumb = (await conn.getFile(thumbnail))?.data;
+    // Enviar audio optimizado
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioUrl },
+      mimetype: "audio/mpeg",
+      fileName: `${video.title.slice(0, 30)}.mp3`.replace(/[^\w\s.-]/gi, ''),
+      ptt: false
+    }, { quoted: m });
 
-    const JT = {
-      contextInfo: {
-        externalAdReply: {
-          title: botname,
-          body: wait,
-          mediaType: 1,
-          previewType: 0,
-          mediaUrl: url,
-          sourceUrl: url,
-          thumbnail: thumb,
-          renderLargerThumbnail: true,
-        },
-      },
-    };
+    await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
 
-    await conn.reply(m.chat, infoMessage, m, JT);
-
-    if (command === 'play') {
-      const downloadInfo = await ddownr.descargar(url, 'mp3');
-      const downloadUrl = downloadInfo.downloadUrl;
-
-      await conn.sendMessage(m.chat, { audio: { url: downloadUrl }, mimetype: "audio/mpeg" }, { quoted: m });
-    } else {
-      throw "Comando no reconocido.";
-    }
   } catch (error) {
-    return m.reply(`⚠︎ Ocurrió un error: ${error.message}`);
+    console.error("Error:", error);
+    await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } });
+
+    const errorMsg = typeof error === 'string' ? error : 
+      `❌ *Error:* ${error.message || 'Ocurrió un problema'}\n\n` +
+      `🔸 *Posibles soluciones:*\n` +
+      `• Verifica el nombre de la canción\n` +
+      `• Intenta con otro tema\n` +
+      `• Prueba más tarde`;
+
+    await conn.sendMessage(m.chat, { text: errorMsg }, { quoted: m });
   }
 };
 
-handler.command = handler.help = ['play'];
-handler.tags = ['downloader'];
-
+handler.command = ['play', 'playaudio', 'ytmusic'];
+handler.exp = 0;
 export default handler;
-
-function formatoVistas(views) {
-  if (views >= 1000) {
-    return (views / 1000).toFixed(1) + 'k (' + views.toLocaleString() + ')';
-  } else {
-    return views.toString();
-  }
-}
