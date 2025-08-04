@@ -1,210 +1,75 @@
-const {
-  useMultiFileAuthState,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  MessageRetryMap,
-  makeCacheableSignalKeyStore,
-  jidNormalizedUser,
-  PHONENUMBER_MCC
-} = await import('@whiskeysockets/baileys')
-import moment from 'moment-timezone'
-import NodeCache from 'node-cache'
-import readline from 'readline'
-import qrcode from "qrcode"
+import fs from 'fs'
+import path from 'path'
+import { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason, generateMessageID, delay } from 'github:ds6/meta'
+import { fileURLToPath } from 'url'
+import { join } from 'path'
 import crypto from 'crypto'
-import fs from "fs"
-import pino from 'pino'
-import * as ws from 'ws'
-const { CONNECTING } = ws
-import { Boom } from '@hapi/boom'
-import { makeWASocket } from '../lib/simple.js'
 
-if (!(global.conns instanceof Array)) global.conns = []
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const methodCode = true // true para usar código de emparejamiento
 
-let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner }) => {
-  let parent = args[0] === 'plz' ? _conn : await global.conn
-  if (!((args[0] && args[0] === 'plz') || (await global.conn).user.jid === _conn.user.jid)) {
-    return m.reply(`Este comando solo puede ser usado en el bot principal! wa.me/${global.conn.user.jid.split`@`[0]}?text=${usedPrefix}code`)
+// Función para generar IDs aleatorios
+function randomID(length = 6) {
+  return crypto.randomBytes(length).toString('hex')
+}
+
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+  const authFolderB = randomID()
+  const sessionPath = `./serbot/${authFolderB}`
+
+  // Crear la carpeta de sesión si no existe
+  if (!fs.existsSync(sessionPath)) {
+    fs.mkdirSync(sessionPath, { recursive: true })
   }
 
-  async function serbot() {
-    let authFolderB = crypto.randomBytes(10).toString('hex').slice(0, 8)
+  const credsPath = `${sessionPath}/creds.json`
+  let usePairingCode = false
 
-    if (!fs.existsSync(`./serbot/${authFolderB}`)) {
-      fs.mkdirSync(`./serbot/${authFolderB}`, { recursive: true })
+  // Si se recibe código base64
+  try {
+    if (args[0]) {
+      let decoded = Buffer.from(args[0], "base64").toString("utf-8")
+      let parsed = JSON.parse(decoded)
+
+      if (typeof parsed !== 'object' || parsed === null) {
+        return m.reply("❌ El código recibido no es válido.")
+      }
+
+      fs.writeFileSync(credsPath, JSON.stringify(parsed, null, 2))
+    } else {
+      usePairingCode = true
     }
-
-    let credsPath = `./serbot/${authFolderB}/creds.json`
-    let usePairingCode = false
-
-    // 🔐 Validación base64 o modo pairing
-    try {
-      if (args[0]) {
-        let decoded = Buffer.from(args[0], "base64").toString("utf-8")
-        let parsed = JSON.parse(decoded)
-
-        if (typeof parsed !== 'object' || parsed === null) {
-          return m.reply("❌ El código recibido no es un objeto válido.")
-        }
-
-        fs.writeFileSync(credsPath, JSON.stringify(parsed, null, 2))
-      } else {
-        usePairingCode = true
-      }
-    } catch (e) {
-      console.error("Error procesando el código base64:", e)
-      return m.reply("❌ El código enviado está dañado o incompleto. Intenta nuevamente.")
-    }
-
-    const { state, saveCreds } = await useMultiFileAuthState(`./serbot/${authFolderB}`)
-    const msgRetryCounterMap = MessageRetryMap => {}
-    const msgRetryCounterCache = new NodeCache()
-    const { version } = await fetchLatestBaileysVersion()
-    let phoneNumber = m.sender.split('@')[0]
-
-    const methodCode = !!phoneNumber || process.argv.includes("code")
-    const MethodMobile = process.argv.includes("mobile")
-
-    const connectionOptions = {
-      logger: pino({ level: 'silent' }),
-      printQRInTerminal: false,
-      mobile: MethodMobile,
-      browser: ["Ubuntu", "Chrome", "20.0.04"],
-      auth: {
-        creds: state.creds,
-        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
-      },
-      markOnlineOnConnect: true,
-      generateHighQualityLinkPreview: true,
-      getMessage: async clave => {
-        let jid = jidNormalizedUser(clave.remoteJid)
-        let msg = await store.loadMessage(jid, clave.id)
-        return msg?.message || ""
-      },
-      msgRetryCounterCache,
-      msgRetryCounterMap,
-      defaultQueryTimeoutMs: undefined,
-      version
-    }
-
-    let conn = makeWASocket(connectionOptions)
-    conn.isInit = false
-    let isInit = true
-
-    // 🧩 Mostrar código de emparejamiento si se requiere
-    if (usePairingCode && methodCode && !conn.authState.creds.registered) {
-      if (!phoneNumber) return process.exit(0)
-      let cleanedNumber = phoneNumber.replace(/[^0-9]/g, '')
-      if (!Object.keys(PHONENUMBER_MCC).some(v => cleanedNumber.startsWith(v))) return process.exit(0)
-
-      setTimeout(async () => {
-        let codeBot = await conn.requestPairingCode(cleanedNumber)
-        codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot
-        let txt = ` –  *S E R B O T  -  S U B B O T*\n\n`
-        txt += `┌  ✩  *Usa este Código para convertirte en un Sub Bot*\n`
-        txt += `│  ✩  Pasos\n`
-        txt += `│  ✩  *1* : Haga click en los 3 puntos\n`
-        txt += `│  ✩  *2* : Toque dispositivos vinculados\n`
-        txt += `│  ✩  *3* : Selecciona *Vincular con el número de teléfono*\n` 
-        txt += `└  ✩  *4* : Escriba el Código\n\n`
-        txt += `*Nota:* Este Código solo funciona en el número que lo solicitó`
-        await parent.reply(m.chat, txt, m, rcanal)
-        await parent.reply(m.chat, codeBot, m, rcanal)
-      }, 3000)
-    }
-
-    async function connectionUpdate(update) {
-      const { connection, lastDisconnect, isNewLogin } = update
-      if (isNewLogin) conn.isInit = true
-
-      const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
-      if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
-        let i = global.conns.indexOf(conn)
-        if (i >= 0) {
-          delete global.conns[i]
-          global.conns.splice(i, 1)
-        }
-        if (code !== DisconnectReason.connectionClosed) {
-          parent.sendMessage(m.chat, { text: "Conexión perdida.." }, { quoted: m })
-        }
-      }
-
-      if (connection === 'open') {
-        conn.isInit = true
-        global.conns.push(conn)
-
-        await parent.reply(m.chat, args[0] ? 'Conectado con éxito' : 'Conectado exitosamente con WhatsApp\n\n*Nota:* Esto es temporal.\nSi el Bot principal se reinicia o se desactiva, todos los sub bots también lo harán.\n\nEl número del bot puede cambiar, guarda este enlace:\n*-* https://whatsapp.com/channel/0029VaBfsIwGk1FyaqFcK91S', m, rcanal)
-
-        await sleep(5000)
-        if (args[0]) return
-
-        await parent.reply(conn.user.jid, `La siguiente vez que se conecte, envía el siguiente mensaje para iniciar sesión sin usar otro código`, m, rcanal)
-        await parent.sendMessage(conn.user.jid, {
-          text: usedPrefix + command + " " + Buffer.from(fs.readFileSync(credsPath), "utf-8").toString("base64")
-        }, { quoted: m })
-      }
-    }
-
-    setInterval(async () => {
-      if (!conn.user) {
-        try { conn.ws.close() } catch { }
-        conn.ev.removeAllListeners()
-        let i = global.conns.indexOf(conn)
-        if (i >= 0) {
-          delete global.conns[i]
-          global.conns.splice(i, 1)
-        }
-      }
-    }, 60000)
-
-    let handler = await import('../handler.js')
-    let creloadHandler = async function (restatConn) {
-      try {
-        const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error)
-        if (Object.keys(Handler || {}).length) handler = Handler
-      } catch (e) {
-        console.error(e)
-      }
-
-      if (restatConn) {
-        try { conn.ws.close() } catch { }
-        conn.ev.removeAllListeners()
-        conn = makeWASocket(connectionOptions)
-        isInit = true
-      }
-
-      if (!isInit) {
-        conn.ev.off('messages.upsert', conn.handler)
-        conn.ev.off('connection.update', conn.connectionUpdate)
-        conn.ev.off('creds.update', conn.credsUpdate)
-      }
-
-      conn.handler = handler.handler.bind(conn)
-      conn.connectionUpdate = connectionUpdate.bind(conn)
-      conn.credsUpdate = saveCreds.bind(conn, true)
-
-      conn.ev.on('messages.upsert', conn.handler)
-      conn.ev.on('connection.update', conn.connectionUpdate)
-      conn.ev.on('creds.update', conn.credsUpdate)
-
-      isInit = false
-      return true
-    }
-
-    creloadHandler(false)
-    conn.ev.on('connection.update', connectionUpdate)
+  } catch (e) {
+    console.error("Error procesando código:", e)
+    return m.reply("❌ Código dañado o incompleto. Intenta nuevamente.")
   }
 
-  serbot()
+  const { state, saveCreds } = await useMultiFileAuthState(sessionPath)
+  const { version } = await fetchLatestBaileysVersion()
+
+  const connBot = makeWASocket({
+    version,
+    printQRInTerminal: false,
+    auth: state,
+    generateHighQualityLinkPreview: true,
+    markOnlineOnConnect: true,
+    syncFullHistory: false,
+    defaultQueryTimeoutMs: undefined,
+    getMessage: async () => ({ conversation: "ok" }),
+  })
+
+  if (usePairingCode && methodCode && !connBot.authState.creds.registered) {
+    const phoneNumber = m.sender.split('@')[0].slice(2)
+    let code = await connBot.requestPairingCode(phoneNumber)
+    m.reply(`🔗 Código de emparejamiento para subbot:\n\n${code}\n\n📌 Úsalo dentro de los siguientes 1-2 minutos.`)
+  }
+
+  connBot.ev.on('creds.update', saveCreds)
 }
 
 handler.help = ['code']
-handler.tags = ['serbot']
-handler.command = ['code', 'codesito']
-handler.rowner = false
+handler.tags = ['jadibot']
+handler.command = /^code$/i
+handler.private = true
 
 export default handler
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
