@@ -11,4 +11,4 @@ handler.admin = true
 handler.group = true
 handler.botAdmin = true
 
-export default handler
+export default handler;
