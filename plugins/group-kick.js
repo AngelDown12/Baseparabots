@@ -1,12 +1,19 @@
-const handler = async (m, { conn }) =>
-  m.mentionedJid?.[0] || m.quoted?.sender
-    ? (await conn.groupParticipantsUpdate(m.chat, [m.mentionedJid[0] || m.quoted.sender], 'remove'),
-       m.reply('☁️ Intruso eliminado.'))
-    : m.reply('☁️ _Menciona al usuario que deseas eliminar._');
+let handler = async (m, { conn, usedPrefix, command }) => {
 
-handler.command = ['kick', 'prepusio'] 
+if (!m.mentionedJid[0] && !m.quoted) return m.reply(`✳️ Ingresa el tag de un usuario. Ejemplo :\n\n*${usedPrefix + command}* @tag`) 
+let user = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted.sender
+if (conn.user.jid.includes(user)) return m.reply(`✳️ No puedo hacer un auto kick`)
+
+await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
+m.reply(`✅ Usuario eliminado con éxito`) 
+
+}
+
+handler.help = ['kick @user']
+handler.tags = ['group']
+handler.command = ['kick', 'expulsar'] 
 handler.admin = true
 handler.group = true
 handler.botAdmin = true
 
-export default handler;
+export default handler
