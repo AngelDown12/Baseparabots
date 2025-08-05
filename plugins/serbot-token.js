@@ -1,16 +1,32 @@
-import fs from "fs"
-async function handler(m, {usedPrefix}) {
-    const user = m.sender.split("@")[0]
-    if (fs.existsSync("./serbot/" + user + "/creds.json")) {
-        let token = Buffer.from(fs.readFileSync("./serbot/" + user + "/creds.json"), "utf-8").toString("base64")
-        await m.reply(`⚡ No compartas tu Token con nadie.\n📫 Tu Token es:`)
-        await m.reply(token)
-    } else {
-        await m.reply(`🐾 No tienes un Token activo.`)
-    }
+export async function before(m, { conn, usedPrefix }) {
+  if (!m.sticker || !m.fileSha256) return
+
+  let id = m.fileSha256.toString('base64')
+  let data = global.db.data.stickercmds?.[id]
+  if (!data) return
+
+  let cmd = data.command
+  let plugin = Object.values(global.plugins).find(
+    p => p?.command && (typeof p.command === 'string'
+      ? p.command === cmd
+      : p.command instanceof RegExp
+        ? p.command.test(cmd)
+        : Array.isArray(p.command)
+          ? p.command.includes(cmd)
+          : false)
+  )
+
+  if (!plugin) return
+
+  let fakeMsg = Object.create(m)
+  fakeMsg.text = usedPrefix + cmd
+  fakeMsg.args = cmd.split(' ')
+  fakeMsg.command = cmd
+  fakeMsg.plugin = plugin
+
+  try {
+    await plugin(fakeMsg, { conn, args: [], usedPrefix, command: cmd })
+  } catch (e) {
+    await conn.reply(m.chat, `⚠️ Error al ejecutar el comando vinculado: ${e}`, m)
   }
-  handler.command = ['token']
-  handler.help = ['token']
-  handler.tags = ['serbot']
-  handler.private = false
-  export default handler
+}
