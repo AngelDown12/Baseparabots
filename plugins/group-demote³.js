@@ -1,9 +1,20 @@
+import PhoneNumber from 'awesome-phonenumber'
+
+function normalizeJid(text = '') {
+  let number = text.replace(/\D/g, '')
+  if (!number) return ''
+  let pn = new PhoneNumber(number, 'MX') // fuerza a región México
+  if (!pn.isValid()) return ''
+  return pn.getNumber('e164').replace('+', '') + '@s.whatsapp.net'
+}
+
 let handler = async (m, { conn }) => {
   const body = m.text?.trim().toLowerCase();
 
   if (body !== 'demote') return;
 
-  const user = m.quoted?.sender;
+  // 🔽 único cambio: normalizamos por si el número viene en formato raro
+  const user = normalizeJid(m.quoted?.sender?.split('@')[0] || '');
 
   if (!user) {
     await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
