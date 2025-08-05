@@ -69,4 +69,5 @@ const handler = async (msg, { conn, args }) => {
 handler.command = ["addco"];
 handler.tags = ["tools"];
 handler.help = ["addco <comando>"];
-module.exports = handler;
+
+export default handler;
