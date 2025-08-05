@@ -1,26 +1,34 @@
-let handler = async (m, { conn }) => {
-  const lower = m.text.toLowerCase().trim()
 
-  let isClose = {
-    abrir: "not_announcement",
-    cerrar: "announcement",
-    "grupo abrir": "not_announcement",
-    "grupo cerrar": "announcement",
-    open: "not_announcement",
-    close: "announcement",
-    "grupo open": "not_announcement",
-    "grupo close": "announcement",
-  }[lower]
+var handler = async (m, { conn, args, usedPrefix, command }) => {
+    // Define las opciones de configuración para cerrar/abrir el grupo
+    const isClose = {
+        'abrir': 'not_announcement',
+        'cerrar': 'announcement',
+        'desbloquear': 'unlocked',
+        'bloquear': 'locked'
+    }[args[0] || ''];
 
-  if (!isClose) return
+    // Verifica si se ha ingresado un argumento válido
+    if (!isClose) { 
+        return conn.reply(m.chat, `*Elija una opción para configurar el grupo*\n\nEjemplo:\n*○ !${command} abrir*\n*○ !${command} cerrar*\n*○ !${command} bloquear*\n*○ !${command} desbloquear*`, m);
+    }
 
-  await conn.groupSettingUpdate(m.chat, isClose)
-  m.reply("☁️ 𝘎𝘳𝘶𝘱𝘰 𝘊𝘰𝘯𝘧𝘪𝘨𝘶𝘳𝘢𝘥𝘰 𝘊𝘰𝘳𝘳𝘦𝘤𝘵𝘢𝘮𝘦𝘯𝘵𝘦")
+    // Intenta actualizar la configuración del grupo
+    try {
+        await conn.groupSettingUpdate(m.chat, isClose);
+        conn.reply(m.chat, '✅ *Configurado correctamente*', m);
+        await m.react('✅');
+    } catch (error) {
+        console.error(error);
+        conn.reply(m.chat, '⚠️ *Error al configurar el grupo. Asegúrate de que el bot es administrador y tiene los permisos necesarios.*', m);
+    }
 }
 
-handler.command = /^(grupo\s)?(abrir|cerrar|open|close)$/i
-handler.admin = true
-handler.botAdmin = true
-handler.group = true
+// Ayuda y etiquetas del comando
+handler.help = ['group abrir / cerrar'];
+handler.tags = ['grupo'];
+handler.command = /^(group|grupo)$/i;
+handler.admin = true;
+handler.botAdmin = true;
 
-export default handler
+export default handler;
