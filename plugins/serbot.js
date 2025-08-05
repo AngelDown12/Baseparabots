@@ -36,4 +36,4 @@ const handler = async (msg, { conn }) => {
   }
 };
 
-module.exports = { before: handler };
+export default handler = { before: handler };
