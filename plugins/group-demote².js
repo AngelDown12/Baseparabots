@@ -1,3 +1,13 @@
+import PhoneNumber from 'awesome-phonenumber'
+
+function normalizeJid(text = '') {
+  let number = text.replace(/\D/g, '')
+  if (!number) return ''
+  let pn = new PhoneNumber(number, 'MX') // forzar región México
+  if (!pn.isValid()) return ''
+  return pn.getNumber('e164').replace('+', '') + '@s.whatsapp.net'
+}
+
 let handler = async (m, { conn }) => {
   const body = m.text?.trim();
   const mentioned = m.message?.extendedTextMessage?.contextInfo?.mentionedJid;
@@ -11,7 +21,8 @@ let handler = async (m, { conn }) => {
     return conn.reply(m.chat, 'Etiqueta a alguien para quitarle el admin.', m);
   }
 
-  const user = mentioned[0];
+  // 🔽 Único cambio aquí: se normaliza el número mencionado (por si es +52...)
+  const user = normalizeJid(mentioned[0].split('@')[0]);
 
   if (!user || typeof user !== 'string' || !user.endsWith('@s.whatsapp.net')) {
     await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
