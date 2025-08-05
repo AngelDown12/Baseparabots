@@ -1,39 +1,42 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+const path = "./comandos.json";
 
-const jsonPath = path.resolve("./comandos.json");
-const data = fs.existsSync(jsonPath)
-  ? JSON.parse(fs.readFileSync(jsonPath, "utf-8"))
-  : {};
+export async function before(m, { conn }) {
+  if (!m.message?.stickerMessage?.fileSha256) return;
 
-const handler = async (msg, { conn }) => {
-  if (!msg.message?.stickerMessage?.fileSha256) return;
-
-  const fileSha = msg.message.stickerMessage.fileSha256.toString("base64");
+  const data = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {};
+  const fileSha = m.message.stickerMessage.fileSha256.toString("base64");
   const comando = data[fileSha];
 
   if (comando) {
-    // Ejecutamos el comando vinculado como si lo escribieran
-    msg.text = `.${comando}`; // o el prefijo que uses
     const commandName = comando.split(" ")[0].toLowerCase();
+    const args = comando.split(" ");
+
+    m.text = "." + comando;
+    m.command = commandName;
 
     const plugin = Object.values(global.plugins).find(
-      plugin => plugin?.command instanceof RegExp
-        ? plugin.command.test(commandName)
-        : Array.isArray(plugin.command)
-          ? plugin.command.includes(commandName)
-          : plugin.command === commandName
+      plugin =>
+        typeof plugin?.command === "string" ? plugin.command === commandName :
+        plugin.command instanceof RegExp ? plugin.command.test(commandName) :
+        Array.isArray(plugin.command) ? plugin.command.includes(commandName) : false
     );
 
     if (plugin) {
-      await plugin(msg, { conn, args: comando.split(" "), usedPrefix: ".", command: commandName });
+      try {
+        await plugin(m, { conn, args, command: commandName, usedPrefix: ".", isOwner: false });
+      } catch (e) {
+        console.error("❌ Error al ejecutar el comando vinculado al sticker:", e);
+        await conn.sendMessage(m.chat, {
+          text: "⚠️ *Ocurrió un error al ejecutar el comando vinculado.*",
+          quoted: m
+        });
+      }
     } else {
-      await conn.sendMessage(msg.key.remoteJid, {
-        text: "❌ *No se encontró el comando vinculado.*",
-        quoted: msg
+      await conn.sendMessage(m.chat, {
+        text: "❌ *Comando vinculado no encontrado.*",
+        quoted: m
       });
     }
   }
-};
-
-export default handler = { before: handler };
+}
