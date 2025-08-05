@@ -1,33 +1,15 @@
-import PhoneNumber from 'awesome-phonenumber'
-
-function normalizeJid(text = '') {
-  let number = text.replace(/\D/g, '')
-  if (!number) return ''
-  let pn = new PhoneNumber(number, 'MX') // fuerza a región México
-  if (!pn.isValid()) return ''
-  return pn.getNumber('e164').replace('+', '') + '@s.whatsapp.net'
-}
-
 let handler = async (m, { conn }) => {
   const body = m.text?.trim().toLowerCase();
 
   if (body !== 'demote') return;
 
-  // 🔽 único cambio: normalizamos por si el número viene en formato raro
-  const user = normalizeJid(m.quoted?.sender?.split('@')[0] || '');
-
+  const user = m.quoted?.sender;
   if (!user) {
-    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
-    return conn.reply(m.chat, 'Responde al mensaje de quien quieras quitar.', m);
+
+    return conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
   }
 
-  try {
-    await conn.groupParticipantsUpdate(m.chat, [user], 'demote');
-    // No dice nada si lo logra
-  } catch (e) {
-    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-    await conn.reply(m.chat, 'No se pudo quitar el admin.', m);
-  }
+  await conn.groupParticipantsUpdate(m.chat, [user], 'demote');
 };
 
 handler.customPrefix = /^demote$/i;
