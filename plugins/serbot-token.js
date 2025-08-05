@@ -1,27 +1,26 @@
-import fs from 'fs';
+import fs from 'fs'
 
 const handler = async (m, { conn, usedPrefix }) => {
-  if (!m.mtype || m.mtype !== 'stickerMessage') return;
+  if (!m.msg || m.mtype !== 'stickerMessage') return
 
-  let fileSha = m.msg.fileSha256?.toString('base64');
-  if (!fileSha) return;
+  const sha = m.msg.fileSha256?.toString('base64')
+  if (!sha) return
 
-  const file = './comandos.json';
-  if (!fs.existsSync(file)) return;
+  const file = './comandos.json'
+  if (!fs.existsSync(file)) return
 
-  let db = {};
+  let db = {}
   try {
-    db = JSON.parse(fs.readFileSync(file));
+    db = JSON.parse(fs.readFileSync(file))
   } catch {
-    return;
+    db = {}
   }
 
-  const comando = db[fileSha];
-  if (!comando) return;
+  const comando = db[sha]
+  if (!comando) return
 
-  // Ejecuta el comando como si el usuario lo hubiera escrito
-  m.text = usedPrefix + comando;
-  return conn.handleMessage(m, m); // esto ejecuta el comando vinculado
-};
+  m.text = usedPrefix + comando
+  return await conn.handleMessage(m, m)
+}
 
-export default handler;
+export default handler
