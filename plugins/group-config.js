@@ -18,7 +18,7 @@ let handler = async (m, { conn, text }) => {
   m.reply("☁️ 𝘎𝘳𝘶𝘱𝘰 𝘊𝘰𝘯𝘧𝘪𝘨𝘶𝘳𝘢𝘥𝘰 𝘊𝘰𝘳𝘳𝘦𝘤𝘵𝘢𝘮𝘦𝘯𝘵𝘦")
 }
 
-handler.command = /^(grupo\s(abrir|cerrar|open|close)|abrir|cerrar|open|close)$/i
+handler.command = (grupo\s(abrir|cerrar|open|close)|abrir|cerrar|open|close)
 handler.admin = true
 handler.botAdmin = true
 handler.group = true
