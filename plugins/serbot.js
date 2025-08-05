@@ -1,54 +1,36 @@
 import fs from 'fs'
 import path from 'path'
 
+const FILE = './comandos.json'
+
 const handler = async (m, { conn, args, usedPrefix, command }) => {
-  // Verifica que se haya respondido a un sticker
-  const quoted = m.quoted
-  if (!quoted || quoted.mtype !== 'stickerMessage') {
-    return conn.sendMessage(m.chat, {
-      text: '❌ *Responde a un sticker para vincularlo con un comando.*'
-    }, { quoted: m })
+  if (!m.quoted || m.quoted.mtype !== 'stickerMessage') {
+    return conn.reply(m.chat, '❌ *Responde a un sticker para vincularlo con un comando.*', m)
   }
 
-  // Verifica que se haya escrito un comando para vincular
-  const comando = args[0]
-  if (!comando) {
-    return conn.sendMessage(m.chat, {
-      text: `⚠️ *Debes escribir el comando a ejecutar.*\n📌 Ejemplo:\n${usedPrefix + command} ping`
-    }, { quoted: m })
-  }
+  let cmd = args[0]
+  if (!cmd) return conn.reply(m.chat, `⚠️ *Debes escribir el comando a ejecutar.*\n\n📌 Ejemplo:\n${usedPrefix + command} ping`, m)
 
-  // Intenta obtener el ID del sticker
-  const sha = quoted.fileSha256?.toString('base64')
-  if (!sha) {
-    return conn.sendMessage(m.chat, {
-      text: '❌ *No se pudo obtener el identificador del sticker.*'
-    }, { quoted: m })
-  }
+  let sha = m.quoted.fileSha256?.toString('base64')
+  if (!sha) return conn.reply(m.chat, '❌ *No se pudo obtener el ID del sticker.*', m)
 
-  // Guarda el comando en comandos.json
-  const filePath = path.join('./', 'comandos.json')
-  let data = {}
-  if (fs.existsSync(filePath)) {
+  let json = {}
+  if (fs.existsSync(FILE)) {
     try {
-      data = JSON.parse(fs.readFileSync(filePath))
+      json = JSON.parse(fs.readFileSync(FILE))
     } catch {
-      data = {}
+      json = {}
     }
   }
 
-  data[sha] = comando
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2))
-
-  return conn.sendMessage(m.chat, {
-    text: `✅ *Sticker vinculado correctamente al comando:* \`${comando}\``,
-    quoted: m
-  })
+  json[sha] = cmd
+  fs.writeFileSync(FILE, JSON.stringify(json, null, 2))
+  conn.reply(m.chat, `✅ *Sticker vinculado correctamente al comando:* \`${cmd}\``, m)
 }
 
+handler.command = ['addco']
 handler.help = ['addco <comando>']
 handler.tags = ['tools']
-handler.command = ['addco']
 handler.register = true
 
 export default handler
