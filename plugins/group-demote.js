@@ -1,55 +1,47 @@
+import PhoneNumber from 'awesome-phonenumber'
+
+function normalizeJid(text = '') {
+  let number = text.replace(/\D/g, '') // eliminar todo lo que no sea número
+  if (!number) return ''
+  let pn = new PhoneNumber(number, 'MX') // Forzar región MX
+  if (!pn.isValid()) return ''
+  return pn.getNumber('e164').replace('+', '') + '@s.whatsapp.net'
+}
+
 let handler = async (m, { conn, text }) => {
-  let number;
-
-  if (isNaN(text) && !text.match(/@/g)) {
-    // No hay número ni mención válida
-  } else if (isNaN(text)) {
-    number = text.split`@`[1];
-  } else if (!isNaN(text)) {
-    number = text;
-  }
-
   if (!text && !m.quoted) {
-    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
-    return conn.reply(m.chat, 'Etiqueta o responde al que quieras quitar.', m);
+    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } })
+    return conn.reply(m.chat, 'Etiqueta o responde al que quieras quitar.', m)
   }
 
-  if (number && (number.length > 13 || (number.length < 11 && number.length > 0))) {
-    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
-    return conn.reply(m.chat, 'Ese número no es válido.', m);
+  let user = null
+
+  if (m.mentionedJid?.length) {
+    user = m.mentionedJid[0]
+  } else if (text) {
+    user = normalizeJid(text)
+  } else if (m.quoted?.sender) {
+    user = m.quoted.sender
   }
 
-  let user;
-
-  try {
-    if (text) {
-      user = number + "@s.whatsapp.net";
-    } else if (m.quoted && m.quoted.sender) {
-      user = m.quoted.sender;
-    }
-  } catch (e) {
-    return conn.reply(m.chat, 'Hubo un problema al detectar al usuario.', m);
-  }
-
-  if (!user) {
-    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } });
-    return conn.reply(m.chat, 'No encontré al usuario.', m);
+  if (!user || !user.endsWith('@s.whatsapp.net')) {
+    await conn.sendMessage(m.chat, { react: { text: '☁️', key: m.key } })
+    return conn.reply(m.chat, 'Ese número no es válido o no se encontró.', m)
   }
 
   try {
-    await conn.groupParticipantsUpdate(m.chat, [user], "demote");
-    // Sin mensaje si se ejecuta bien
+    await conn.groupParticipantsUpdate(m.chat, [user], 'demote')
   } catch (e) {
-    // Sin mensaje si falla
+    // Puedes loguear el error si deseas: console.log(e)
   }
-};
+}
 
-handler.help = ["@usuario*"].map((v) => "demote " + v);
-handler.tags = ["group"];
-handler.command = /^(demote|quitaradmin|quitarpoder)$/i;
-handler.group = true;
-handler.admin = true;
-handler.botAdmin = true;
-handler.fail = null;
+handler.help = ['@usuario*'].map((v) => 'demote ' + v)
+handler.tags = ['group']
+handler.command = /^(demote|quitaradmin|quitarpoder)$/i
+handler.group = true
+handler.admin = true
+handler.botAdmin = true
+handler.fail = null
 
-export default handler;
+export default handler
