@@ -1,32 +1,39 @@
-let handler = async (m, { conn, args }) => {
-  let sticker = m.quoted?.fileSha256
-  if (!sticker) return m.reply('✳️ Responde a un sticker.')
+const fs = require("fs");
+const path = require("path");
 
-  let cmd = (args[0] || '').toLowerCase()
-  if (!cmd) return m.reply('📌 Escribe el comando que deseas vincular.')
+const jsonPath = path.resolve("./comandos.json");
+const data = fs.existsSync(jsonPath)
+  ? JSON.parse(fs.readFileSync(jsonPath, "utf-8"))
+  : {};
 
-  let plugin = Object.values(global.plugins).find(p =>
-    p.command && (
-      typeof p.command === 'string' ? p.command === cmd :
-      p.command instanceof RegExp ? p.command.test(cmd) :
-      Array.isArray(p.command) ? p.command.includes(cmd) : false
-    )
-  )
+const handler = async (msg, { conn }) => {
+  if (!msg.message?.stickerMessage?.fileSha256) return;
 
-  if (!plugin) return m.reply(`❌ El comando "*${cmd}*" no existe.`)
+  const fileSha = msg.message.stickerMessage.fileSha256.toString("base64");
+  const comando = data[fileSha];
 
-  let id = sticker.toString('base64')
-  global.db.data.stickercmds = global.db.data.stickercmds || {}
-  global.db.data.stickercmds[id] = {
-    command: cmd,
-    addedBy: m.sender,
-    date: Date.now()
+  if (comando) {
+    // Ejecutamos el comando vinculado como si lo escribieran
+    msg.text = `.${comando}`; // o el prefijo que uses
+    const commandName = comando.split(" ")[0].toLowerCase();
+
+    const plugin = Object.values(global.plugins).find(
+      plugin => plugin?.command instanceof RegExp
+        ? plugin.command.test(commandName)
+        : Array.isArray(plugin.command)
+          ? plugin.command.includes(commandName)
+          : plugin.command === commandName
+    );
+
+    if (plugin) {
+      await plugin(msg, { conn, args: comando.split(" "), usedPrefix: ".", command: commandName });
+    } else {
+      await conn.sendMessage(msg.key.remoteJid, {
+        text: "❌ *No se encontró el comando vinculado.*",
+        quoted: msg
+      });
+    }
   }
+};
 
-  m.reply(`✅ Sticker vinculado al comando *${cmd}*`)
-}
-handler.command = ['add']
-handler.help = ['add <comando>']
-handler.tags = ['tools']
-handler.register = true
-export default handler
+module.exports = { before: handler };
