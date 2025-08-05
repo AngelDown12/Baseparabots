@@ -17,7 +17,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
     try {
         await conn.groupSettingUpdate(m.chat, isClose);
         conn.reply(m.chat, '☁️ 𝘎𝘳𝘶𝘱𝘰 𝘊𝘰𝘯𝘧𝘪𝘨𝘶𝘳𝘢𝘥𝘰 𝘊𝘰𝘳𝘳𝘦𝘤𝘵𝘢𝘮𝘦𝘯𝘵𝘦', m);
-        await m.react('✅');
+        await m.react('');
     } catch (error) {
         console.error(error);
         conn.reply(m.chat, '⚠️ *Error al configurar el grupo. Asegúrate de que el bot es administrador y tiene los permisos necesarios.*', m);
