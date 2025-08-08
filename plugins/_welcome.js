@@ -13,7 +13,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
   let groupName = groupMetadata.subject
   let groupDesc = groupMetadata.desc || 'Sin descripción'
 
-  // Obtener foto de perfil o usar default
+  // Obtener foto de perfil
   let profilePic
   try {
     profilePic = await conn.profilePictureUrl(userJid, 'image')
@@ -30,22 +30,17 @@ export async function before(m, { conn, participants, groupMetadata }) {
           .replace(/@desc/g, groupDesc)
       : `┊» 𝙋𝙊𝙍 𝙁𝙄𝙉 𝙇𝙇𝙀𝙂𝘼𝙎\n┊» ${groupName}\n┊» ${user}\n┊» 𝗹𝗲𝗲 𝗹𝗮 𝗱𝗲𝘀𝗰𝗿𝗶𝗽𝗰𝗶𝗼𝗻\n\n» Siéntete como en tu casa, aplasta el culo!!!`
 
-    try {
-      await conn.sendMessage(m.chat, {
-        image: { url: profilePic },
-        caption: welcome,
-        mentions: [userJid]
-      })
+    await conn.sendMessage(m.chat, {
+      image: { url: profilePic },
+      caption: welcome,
+      mentions: [userJid]
+    }).catch(e => console.log('[ERROR IMG WELCOME]', e))
 
-      await new Promise(resolve => setTimeout(resolve, 500)) // Espera breve
-
-      await conn.sendMessage(m.chat, {
-        audio: { url: welcomeAudioUrl },
-        mimetype: 'audio/ogg; codecs=opus'
-      })
-    } catch (e) {
-      console.error('Error en mensaje de bienvenida:', e)
-    }
+    await conn.sendMessage(m.chat, {
+      audio: { url: welcomeAudioUrl },
+      mimetype: 'audio/ogg; codecs=opus',
+      ptt: false  // asegúrate de que no sea nota de voz
+    }).catch(e => console.log('[ERROR AUDIO WELCOME]', e))
   }
 
   // DESPEDIDA
@@ -64,21 +59,16 @@ export async function before(m, { conn, participants, groupMetadata }) {
           .replace(/@desc/g, groupDesc)
       : msgsBye[Math.floor(Math.random() * msgsBye.length)]
 
-    try {
-      await conn.sendMessage(m.chat, {
-        image: { url: profilePic },
-        caption: bye,
-        mentions: [userJid]
-      })
+    await conn.sendMessage(m.chat, {
+      image: { url: profilePic },
+      caption: bye,
+      mentions: [userJid]
+    }).catch(e => console.log('[ERROR IMG BYE]', e))
 
-      await new Promise(resolve => setTimeout(resolve, 500)) // Espera breve
-
-      await conn.sendMessage(m.chat, {
-        audio: { url: byeAudioUrl },
-        mimetype: 'audio/ogg; codecs=opus'
-      })
-    } catch (e) {
-      console.error('Error en mensaje de despedida:', e)
-    }
+    await conn.sendMessage(m.chat, {
+      audio: { url: byeAudioUrl },
+      mimetype: 'audio/ogg; codecs=opus',
+      ptt: false
+    }).catch(e => console.log('[ERROR AUDIO BYE]', e))
   }
 }
