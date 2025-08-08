@@ -1,32 +1,18 @@
-import fetch from 'node-fetch'
+import fetch from 'node-fetch';
 
 let mutedUsers = new Set();
 
-let handler = async (m, { conn, isAdmin, isOwner, isBotAdmin, args }) => {
-  if (!m.isGroup) return;
-  if (!isAdmin && !isOwner) return;
-  if (!isBotAdmin) return;
+let handler = async (m, { conn, participants, isAdmin, isOwner, isBotAdmin, usedPrefix, command }) => {
+  if (!m.isGroup) return global.dfail('group', m, conn);
+  if (!isAdmin && !isOwner) return global.dfail('admin', m, conn);
+  if (!isBotAdmin) return global.dfail('botAdmin', m, conn);
 
-  let text = m.text.toLowerCase();
-  if (!text.startsWith('mute') && !text.startsWith('unmute')) return;
-
-  let user;
-  if (m.quoted) {
-    user = m.quoted.sender;
-  } else if (m.mentionedJid?.[0]) {
-    user = m.mentionedJid[0];
-  } else {
-    return m.reply('⚠️ Usa: mute @usuario o responde a su mensaje.');
-  }
-
-  if (user === m.sender) return m.reply('❌ No puedes mutearte o desmutearte a ti mismo.');
-
-  const isMute = text.startsWith('mute');
-  const thumbnailUrl = isMute
+  const isMute = command === 'muteall';
+  const thumbUrl = isMute
     ? 'https://telegra.ph/file/f8324d9798fa2ed2317bc.png'
     : 'https://telegra.ph/file/aea704d0b242b8c41bf15.png';
 
-  const thumbBuffer = await fetch(thumbnailUrl).then(res => res.buffer());
+  const thumbBuffer = await fetch(thumbUrl).then(res => res.buffer());
 
   const preview = {
     key: {
@@ -36,38 +22,55 @@ let handler = async (m, { conn, isAdmin, isOwner, isBotAdmin, args }) => {
     },
     message: {
       locationMessage: {
-        name: isMute ? 'Usuario mutado' : 'Usuario desmuteado',
+        name: isMute ? 'Modo silencio activado' : 'Silencio desactivado',
         jpegThumbnail: thumbBuffer
       }
     }
   };
 
-  if (isMute) {
-    mutedUsers.add(user);
-    await conn.sendMessage(m.chat, { text: '*Tus mensajes serán eliminados*' }, { quoted: preview, mentions: [user] });
-  } else {
-    if (!mutedUsers.has(user)) return m.reply('⚠️ Ese usuario no está muteado.');
-    mutedUsers.delete(user);
-    await conn.sendMessage(m.chat, { text: '*Tus mensajes no serán eliminados*' }, { quoted: preview, mentions: [user] });
+  let affected = 0;
+
+  for (let user of participants) {
+    const jid = user.id;
+
+    if (isMute) {
+      // Mutea a todos excepto al que ejecuta
+      if (jid !== m.sender && !mutedUsers.has(jid)) {
+        mutedUsers.add(jid);
+        affected++;
+      }
+    } else {
+      // Desmutea a todos
+      if (mutedUsers.has(jid)) {
+        mutedUsers.delete(jid);
+        affected++;
+      }
+    }
   }
+
+  const text = isMute
+    ? `🔇 *Modo silencio activado*\nSe muteó a *${affected}* miembros del grupo.`
+    : `🔊 *Silencio desactivado*\nSe desmuteó a *${affected}* miembros del grupo.`;
+
+  await conn.sendMessage(m.chat, { text, mentions: participants.map(p => p.id) }, { quoted: preview });
 };
 
+// 🔥 Borra automáticamente TODO mensaje (texto, fotos, videos, stickers, etc) de los muteados
+handler.before = async function (m, { conn }) {
+  if (!m.isGroup || m.fromMe) return;
 
-handler.before = async (m, { conn }) => {
-  if (!m.isGroup || !m.sender || m.fromMe) return;
   if (mutedUsers.has(m.sender)) {
     try {
       await conn.sendMessage(m.chat, { delete: m.key });
     } catch (e) {
-      console.error('[MUTE] Error al eliminar mensaje:', e);
+      // ignorar errores si ya fue eliminado o no tiene permisos
     }
   }
 };
 
-
-handler.customPrefix = /^(mute|unmute)(\s|$)/i;
-handler.command = new RegExp;
-
+handler.help = ['muteall', 'unmuteall'];
+handler.tags = ['group'];
+handler.command = /^(muteall|unmuteall)$/i;
 handler.group = true;
 handler.admin = true;
 handler.botAdmin = true;
