@@ -9,6 +9,7 @@ const handler = async (m, { conn, participants, isAdmin, isOwner }) => {
 
   let texto = `*!  MENCION GENERAL  !*\n`;
   texto += `*PARA ${total} MIEMBROS* 🗣️\n`;
+  texto += ``;
 
   for (const user of participants) {
     const numero = user.id.split('@')[0];
