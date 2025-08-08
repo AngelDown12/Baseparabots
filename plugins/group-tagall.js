@@ -13,7 +13,7 @@ const handler = async (m, { conn, participants, isAdmin, isOwner }) => {
 
   for (const user of participants) {
     const numero = user.id.split('@')[0];
-    texto += `@${numero}\n`;
+    texto += `🗣️ @${numero}\n`;
   }
 
   await conn.sendMessage(m.chat, {
