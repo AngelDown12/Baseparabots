@@ -1,8 +1,11 @@
 import fetch from 'node-fetch';
 
+// Quita límite de listeners para alto tráfico (evita warnings y cuellos de botella)
+process.setMaxListeners(0);
+
 let mutedUsers = new Set();
 
-let handler = async (m, { conn, participants, isAdmin, isOwner, isBotAdmin, usedPrefix, command }) => {
+let handler = async (m, { conn, participants, isAdmin, isOwner, isBotAdmin, command }) => {
   if (!m.isGroup) return global.dfail('group', m, conn);
   if (!isAdmin && !isOwner) return global.dfail('admin', m, conn);
   if (!isBotAdmin) return global.dfail('botAdmin', m, conn);
@@ -34,13 +37,11 @@ let handler = async (m, { conn, participants, isAdmin, isOwner, isBotAdmin, used
     const jid = user.id;
 
     if (isMute) {
-      // Mutea a todos excepto al que ejecuta
       if (jid !== m.sender && !mutedUsers.has(jid)) {
         mutedUsers.add(jid);
         affected++;
       }
     } else {
-      // Desmutea a todos
       if (mutedUsers.has(jid)) {
         mutedUsers.delete(jid);
         affected++;
@@ -55,16 +56,12 @@ let handler = async (m, { conn, participants, isAdmin, isOwner, isBotAdmin, used
   await conn.sendMessage(m.chat, { text, mentions: participants.map(p => p.id) }, { quoted: preview });
 };
 
-// 🔥 Borra automáticamente TODO mensaje (texto, fotos, videos, stickers, etc) de los muteados
-handler.before = async function (m, { conn }) {
+// Eliminación instantánea y paralela de TODO mensaje de usuarios muteados
+handler.before = function (m, { conn }) {
   if (!m.isGroup || m.fromMe) return;
 
   if (mutedUsers.has(m.sender)) {
-    try {
-      await conn.sendMessage(m.chat, { delete: m.key });
-    } catch (e) {
-      // ignorar errores si ya fue eliminado o no tiene permisos
-    }
+    conn.sendMessage(m.chat, { delete: m.key }).catch(() => {});
   }
 };
 
