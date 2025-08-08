@@ -1,15 +1,10 @@
-const handler = async (m, { conn, participants, isAdmin, isOwner }) => {
+const handler = async (m, { conn, participants, isAdmin, isOwner, command }) => {
   if (!m.isGroup) return;
   if (!isAdmin && !isOwner) return global.dfail?.('admin', m, conn);
 
-  const groupMetadata = await conn.groupMetadata(m.chat);
-  const groupName = groupMetadata.subject;
   const total = participants.length;
-
-  let texto = `*¡  MENCION GENERAL  ¡*\n\n`;
-  texto += `*PARA ${total} MEMBERS* 🗣️\n\n`;
-  texto += `» *INFO:*\n\n`;
-  texto += `╭⊹ *${groupName.toUpperCase()}.* ⊹\n\n`;
+  let texto = `*!  MENCION GENERAL  !*\n`;
+  texto += `*PARA ${total} MIEMBROS* 🗣️\n\n`;
 
   for (const user of participants) {
     const numero = user.id.split('@')[0];
@@ -17,8 +12,8 @@ const handler = async (m, { conn, participants, isAdmin, isOwner }) => {
   }
 
   await conn.sendMessage(m.chat, {
-    text: texto.trim(),
-    mentions: participants.map(p => p.id),
+    text: texto,
+    mentions: participants.map(p => p.id)
   });
 };
 
