@@ -24,7 +24,7 @@ let handler = async (m, { conn }) => {
     }
   }
 }
-handler.customPrefix = /^(del)/i;
+handler.customPrefix = /^(del|.del)/i;
 handler.command = new RegExp;
 handler.group = true;
 handler.admin = true;
